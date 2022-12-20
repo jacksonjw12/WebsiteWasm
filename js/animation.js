@@ -58,7 +58,6 @@ export default class Animation {
 		canvas.ctx.strokeStyle = "rgba(255,255,255,0.9)";
 
 		const radius = 10;
-		console.log(123)
 		for(let p = 0; p < window.numPoints; p++) {
 			const size = 10 * (p / window.numPoints);
 
