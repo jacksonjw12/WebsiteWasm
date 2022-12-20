@@ -17,8 +17,8 @@ export default class Animation {
 	}
 
 	static init() {
-		window.numPoints = 5000;
-		window.wasm.exports.initialize(numPoints, 200.0);
+		window.numPoints = 700;
+		window.wasm.exports.initialize(numPoints, 500.0);
 
 
 	}
@@ -49,19 +49,32 @@ export default class Animation {
 	static render() {
 
 		// canvas.ctx.fillStyle = "white";
-		canvas.ctx.fillStyle = `rgba(255,255,255,0.1)`
+		canvas.ctx.fillStyle = `rgba(255,255,255,1.0)`
 
 		canvas.ctx.fillRect(0,0,canvas.width,canvas.height);
 		// canvas.ctx.fillRect(Animation.z % canvas.width,0,100,100);
 
 		canvas.ctx.fillStyle = "black";
-		const radius = 15;
+		canvas.ctx.strokeStyle = "rgba(255,255,255,0.9)";
+
+		const radius = 10;
+		console.log(123)
 		for(let p = 0; p < window.numPoints; p++) {
+			const size = 10 * (p / window.numPoints);
+
 			canvas.ctx.beginPath();
 
-			canvas.ctx.arc(wasm.memoryBuffer[p*numPropertiesPerPoint], wasm.memoryBuffer[p*numPropertiesPerPoint + 1], 10, 0, radius);
+			const x = wasm.memoryBuffer[p*numPropertiesPerPoint];
+			const y = wasm.memoryBuffer[p*numPropertiesPerPoint + 1];
+
+			canvas.ctx.arc(x, y, radius+size, 0, 2*Math.PI);
 			canvas.ctx.fill();
+
+
+			
+			canvas.ctx.stroke();
 		}
+
 		
 
 	}

@@ -1,4 +1,4 @@
-const debounce = (func, wait, immediate) => {
+const debounce = function(func, wait, immediate) {
     var timeout;
     return () => {
         const context = this, args = arguments;
@@ -12,6 +12,7 @@ const debounce = (func, wait, immediate) => {
         if (callNow) func.apply(context, args);
     };
 };
+
 export default class Canvas {
 	constructor(id) {
 		this.el = document.getElementById(id);
@@ -35,6 +36,25 @@ export default class Canvas {
 				wasm.exports.setMousePos(mousePos.x, mousePos.y)
 			}
 		});
+
+		const onTouch = (touchEvent) => {
+			if(touchEvent.touches.length == 0) {
+				console.log("no touch")
+				mousePos.x = undefined;
+				mousePos.y = undefined;
+				wasm.exports.unsetMousePos()
+				return;
+			}
+			var touch = touchEvent.touches[0];// || touchEvent.changedTouches[0];
+			mousePos.x = touch.clientX;
+			mousePos.y = touch.clientY;
+			console.log("touch")
+			wasm.exports.setMousePos(mousePos.x, mousePos.y)
+
+		}
+		document.addEventListener("touchmove", onTouch);
+		document.addEventListener("touchstart", onTouch);
+		document.addEventListener("touchend", onTouch);
 
 
 		this.ctx = this.el.getContext("2d");

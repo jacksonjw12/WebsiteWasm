@@ -10,20 +10,13 @@ let numPoints: u32 = 0;
 let propertiesPerPoint = 4;
 
 let distanceFactor: f64 = 0.1;
-let timeFactor: f64 = 2;
+let timeFactor: f64 = 1.6;
 
 
 export function setCanvasSize(width: u32, height: u32): void {
   canvasWidth = width;
   canvasHeight = height;
 }
-
-// function getCanvasWidth(): u32 {
-//   return load<u32>(0);
-// }
-// function getCanvasHeight(): u32 {
-//   return load<u32>(4);
-// }
 
 
 export function getMemAt(index: u32): f64 {
@@ -84,11 +77,36 @@ class Vec2D {
 
 
 const gravConstant: f64 = 100;
-const gravityBreakdown: f64 = 15 * distanceFactor;
+const gravityBreakdown: f64 = 20 * distanceFactor;
 
 const GravReturnVector = new Vec2D(0 as f64, 0 as f64)
 
-function gravityForces(p: u32): void {
+function setGravityForceVector(deltaX: f64, deltaY: f64): void {
+  const signX = Math.sign(deltaX);
+  const signY = Math.sign(deltaY);
+
+  if(Math.abs(deltaX) < gravityBreakdown) {
+    deltaX = gravityBreakdown * signX;
+  }
+  if(Math.abs(deltaY) < gravityBreakdown) {
+    deltaY = gravityBreakdown * signY;
+  }
+
+  const distDist = deltaX * deltaX + deltaY * deltaY;
+ 
+  const forceMagnitude = gravConstant / distDist;
+
+  const theta = Math.atan(Math.abs(deltaY / deltaX));
+
+  const gravX = Math.abs(Math.cos(theta) * forceMagnitude) * -signX;
+  const gravY = Math.abs(Math.sin(theta) * forceMagnitude) * -signY;
+
+  GravReturnVector.x = gravX;
+  GravReturnVector.y = gravY;
+  return;
+}
+
+function cursorGravityForces(p: u32): void {
   if(!mousePosSet) {
     GravReturnVector.x = 0;
     GravReturnVector.y = 0;
@@ -96,59 +114,20 @@ function gravityForces(p: u32): void {
   }
   let deltaX = (Point.x(p) - mousePosX) * distanceFactor;
   let deltaY = (Point.y(p) - mousePosY) * distanceFactor;
-
-  const signX = Math.sign(deltaX);
-  const signY = Math.sign(deltaY);
-
-  if(Math.abs(deltaX) < gravityBreakdown) {
-    deltaX = gravityBreakdown * signX;
-  }
-  if(Math.abs(deltaY) < gravityBreakdown) {
-    deltaY = gravityBreakdown * signY;
-  }
-
-  const distDist = deltaX * deltaX + deltaY * deltaY;
- 
-  const forceMagnitude = gravConstant / distDist;
-
-  const theta = Math.atan(Math.abs(deltaY / deltaX));
-
-  const gravX = Math.abs(Math.cos(theta) * forceMagnitude) * -signX;
-  const gravY = Math.abs(Math.sin(theta) * forceMagnitude) * -signY;
-
-  GravReturnVector.x = gravX;
-  GravReturnVector.y = gravY;
-  return;
+  setGravityForceVector(deltaX, deltaY);
+  
 }
 
 function pointGravityForces(p: u32, p2: u32): void {
-  let deltaX = (Point.x(p) - mousePosX) * distanceFactor;
-  let deltaY = (Point.y(p) - mousePosY) * distanceFactor;
+  let deltaX = (Point.x(p) - Point.x(p2)) * distanceFactor;
+  let deltaY = (Point.y(p) - Point.y(p2)) * distanceFactor;
 
-  const signX = Math.sign(deltaX);
-  const signY = Math.sign(deltaY);
-
-  if(Math.abs(deltaX) < gravityBreakdown) {
-    deltaX = gravityBreakdown * signX;
-  }
-  if(Math.abs(deltaY) < gravityBreakdown) {
-    deltaY = gravityBreakdown * signY;
-  }
-
-  const distDist = deltaX * deltaX + deltaY * deltaY;
- 
-  const forceMagnitude = gravConstant / distDist;
-
-  const theta = Math.atan(Math.abs(deltaY / deltaX));
-
-  const gravX = Math.abs(Math.cos(theta) * forceMagnitude) * -signX;
-  const gravY = Math.abs(Math.sin(theta) * forceMagnitude) * -signY;
-
-  GravReturnVector.x = gravX;
-  GravReturnVector.y = gravY;
-  return;
+  setGravityForceVector(deltaX, deltaY);
 }
 
+const pointToPointGravity: boolean = true;
+const cursorMass: f64 = 100;
+const pointMass: f64 = .2;
 
 export function update(dtSeconds: f64): void {
   dtSeconds *= timeFactor;
@@ -159,10 +138,21 @@ export function update(dtSeconds: f64): void {
     Point.setY(p, (Point.y(p) + Point.velY(p) * dtSeconds) % canvasHeight);
 
 
-    gravityForces(p);
+    cursorGravityForces(p);
 
-    Point.setVelX(p, Point.velX(p) + GravReturnVector.x * dtSeconds * 100 );
-    Point.setVelY(p, Point.velY(p) + GravReturnVector.y * dtSeconds * 100 );
+    Point.setVelX(p, Point.velX(p) + GravReturnVector.x * dtSeconds * cursorMass );
+    Point.setVelY(p, Point.velY(p) + GravReturnVector.y * dtSeconds * cursorMass );
+
+    if(pointToPointGravity) {
+      for(let j: u32 = p + 1; j < numPoints; j++) {
+        pointGravityForces(p,j);
+        Point.setVelX(p, Point.velX(p) + GravReturnVector.x * dtSeconds * pointMass );
+        Point.setVelY(p, Point.velY(p) + GravReturnVector.y * dtSeconds * pointMass );
+        Point.setVelX(j, Point.velX(j) - GravReturnVector.x * dtSeconds * pointMass );
+        Point.setVelY(j, Point.velY(j) - GravReturnVector.y * dtSeconds * pointMass );
+
+      }
+    }
 
 
     Point.setVelX(p, Point.velX(p) * 0.99);
