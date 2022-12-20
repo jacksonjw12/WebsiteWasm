@@ -1,0 +1,28 @@
+{
+  "name": "websitewasm",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "node tests",
+    "asbuild:debug": "asc assembly/index.ts --target debug --runtime stub --use Math=JSMath --bindings raw",
+    "asbuild:release": "asc assembly/index.ts --target release --runtime stub --use Math=JSMath --bindings esm",
+    "asbuild:release2": "asc assembly/*.ts --target release --runtime stub",
+    "asbuild:watch": "onchange -i 'assembly/**/*' -- npm run asbuild:release2",
+    "asbuild": "npm run asbuild:debug && npm run asbuild:release2",
+    "start": "npx serve ."
+  },
+  "author": "jackson wheeler",
+  "license": "ISC",
+  "devDependencies": {
+    "assemblyscript": "^0.25.1",
+    "onchange": "^7.1.0"
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./build/release.js",
+      "types": "./build/release.d.ts"
+    }
+  }
+}
